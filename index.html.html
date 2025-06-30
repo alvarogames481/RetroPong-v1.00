@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Retro Pong</title>
+  <style>
+    body {
+      margin: 0;
+      background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: white;
+      text-align: center;
+    }
+    #menu {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    .btn {
+      background-color: #1abc9c;
+      border: none;
+      color: white;
+      padding: 15px 30px;
+      margin: 10px;
+      font-size: 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .btn:hover {
+      background-color: #16a085;
+    }
+    canvas {
+      border: 4px solid white;
+      display: block;
+      margin: auto;
+      background: black;
+    }
+    #score {
+      font-size: 24px;
+      padding: 15px;
+    }
+  </style>
+</head>
+<body>
+<div id="menu">
+  <h1>Retro Pong</h1>
+  <button class="btn" onclick="startGame()">Iniciar Juego</button>
+  <button class="btn">Ajustes (pronto)</button>
+</div>
+<div id="score" style="display: none;">Jugador 0 - 0 CPU</div>
+<canvas id="game" width="800" height="400" style="display: none;"></canvas>
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+let scoreBoard = document.getElementById("score");
+
+let playerScore = 0, cpuScore = 0;
+
+const paddleWidth = 10, paddleHeight = 80;
+let playerY = canvas.height / 2 - paddleHeight / 2;
+let cpuY = playerY;
+const paddleSpeed = 6;
+const cpuSpeed = 5;
+
+let upPressed = false;
+let downPressed = false;
+
+let ballX = canvas.width / 2;
+let ballY = canvas.height / 2;
+let ballRadius = 8;
+let ballSpeedX = 4;
+let ballSpeedY = 4;
+
+function startGame() {
+  document.getElementById("menu").style.display = "none";
+  canvas.style.display = "block";
+  scoreBoard.style.display = "block";
+  requestAnimationFrame(gameLoop);
+}
+
+document.addEventListener("keydown", e => {
+  if (e.key === "ArrowUp") upPressed = true;
+  if (e.key === "ArrowDown") downPressed = true;
+});
+
+document.addEventListener("keyup", e => {
+  if (e.key === "ArrowUp") upPressed = false;
+  if (e.key === "ArrowDown") downPressed = false;
+});
+
+function update() {
+  if (upPressed) playerY -= paddleSpeed;
+  if (downPressed) playerY += paddleSpeed;
+
+  ballX += ballSpeedX;
+  ballY += ballSpeedY;
+
+  if (ballY - ballRadius < 0 || ballY + ballRadius > canvas.height) {
+    ballSpeedY *= -1;
+  }
+
+  if (ballX - ballRadius < paddleWidth && ballY > playerY && ballY < playerY + paddleHeight) {
+    ballSpeedX *= -1;
+    ballX = paddleWidth + ballRadius;
+  }
+
+  if (ballX + ballRadius > canvas.width - paddleWidth && ballY > cpuY && ballY < cpuY + paddleHeight) {
+    ballSpeedX *= -1;
+    ballX = canvas.width - paddleWidth - ballRadius;
+  }
+
+  if (ballX < 0) {
+    cpuScore++;
+    resetBall();
+  } else if (ballX > canvas.width) {
+    playerScore++;
+    resetBall();
+  }
+
+  const cpuCenter = cpuY + paddleHeight / 2;
+  if (cpuCenter < ballY - 10) cpuY += cpuSpeed;
+  else if (cpuCenter > ballY + 10) cpuY -= cpuSpeed;
+
+  playerY = Math.max(0, Math.min(canvas.height - paddleHeight, playerY));
+  cpuY = Math.max(0, Math.min(canvas.height - paddleHeight, cpuY));
+
+  scoreBoard.innerText = `Jugador ${playerScore} - ${cpuScore} CPU`;
+}
+
+function resetBall() {
+  ballX = canvas.width / 2;
+  ballY = canvas.height / 2;
+  ballSpeedX *= -1;
+  ballSpeedY = (Math.random() - 0.5) * 8;
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  ctx.strokeStyle = "white";
+  ctx.setLineDash([10, 10]);
+  ctx.beginPath();
+  ctx.moveTo(canvas.width / 2, 0);
+  ctx.lineTo(canvas.width / 2, canvas.height);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = "white";
+  ctx.fillRect(0, playerY, paddleWidth, paddleHeight);
+  ctx.fillRect(canvas.width - paddleWidth, cpuY, paddleWidth, paddleHeight);
+
+  ctx.beginPath();
+  ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function gameLoop() {
+  update();
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+</script>
+</body>
+</html>
